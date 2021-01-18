@@ -1,5 +1,5 @@
 {
-    "name": "com.rollin.leoecs",
+    "name": "com.rollinart.leoecs-phase-system-sort",
     "author": "Rollinart",
     "displayName": "Leopotam ECS - Phasing and sorting systems",
     "description": "Extension for LeoECS to simplify working with systems",
