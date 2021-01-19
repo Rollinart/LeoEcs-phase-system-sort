@@ -27,31 +27,23 @@ namespace Rollin.LeoEcs
 
         public void AddSystem<T>(T system)
         {
-            if (system is IEcsInitSystem initSystem)
+            switch (system)
             {
-                initSystems.Add(initSystem);
-                return;
-            }
-
-            if (system is IEcsRunSystem runSystem)
-            {
-                if (system.GetType().IsDefined(typeof(HandlerSystemAttribute), true))
-                {
+                case IEcsInitSystem initSystem:
+                    initSystems.Add(initSystem);
+                    return;
+                case IEcsRunSystem runSystem when system.GetType().IsDefined(typeof(HandlerSystemAttribute), true):
                     handlerSystems.Add(runSystem);
                     return;
-                }
-
-                if (system.GetType().IsDefined(typeof(HandlerRunSystemAttribute), true))
-                {
+                case IEcsRunSystem runSystem when system.GetType().IsDefined(typeof(HandlerRunSystemAttribute), true):
                     handlerRunSystems.Add(runSystem);
                     return;
-                }
-
-                runSystems.Add(runSystem);
-                return;
+                case IEcsRunSystem runSystem:
+                    runSystems.Add(runSystem);
+                    return;
+                default:
+                    throw new Exception($"{typeof(T).Name} is not inherited from Init or Run system");
             }
-
-            throw new Exception($"{typeof(T).Name} is not inherited from Init or Run system");
         }
 
         public void SortSystems()

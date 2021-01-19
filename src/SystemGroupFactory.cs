@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Leopotam.Ecs;
 using Rollin.LeoEcs.Extensions;
@@ -26,7 +25,7 @@ namespace Rollin.LeoEcs
                 itr++;
             }
 
-            return groupsDictionary.Select(x => x.Value);
+            return groups;
         }
 
         private static void CreateSystemGroups(IDictionary<Enum, ISystemGroup> groupsDictionary,
