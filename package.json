@@ -1,7 +1,7 @@
 {
     "name": "com.rollinart.leoecs-phase-system-sort",
     "author": "Yuri Doronin",
-    "displayName": "Leopotam ECS - Phasing and sorting systems",
+    "displayName": "Leopotam ECS - Sorting systems",
     "description": "Extension for LeoECS to simplify working with systems",
     "unity": "2019.2",
     "version": "2019.11.22",
