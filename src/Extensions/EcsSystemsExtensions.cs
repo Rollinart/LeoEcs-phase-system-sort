@@ -1,20 +1,19 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using Leopotam.Ecs;
+using Scellecs.Collections;
 
 namespace Rollin.LeoEcs.Extensions
 {
     public static class EcsSystemsExtensions
     {
-        public static ICollection<T> SortSystems<T>(this ICollection<T> systems) where T : IEcsSystem
+        public static FastList<T> SortSystems<T>(this FastList<T> systems) where T : IEcsSystem
         {
-            if (systems.Count <= 1)
+            if (systems.length <= 1)
             {
                 return systems;
             }
 
-            var graph = new Graph<T>(systems.Count);
+            var graph = new Graph<T>(systems.length);
 
             foreach (var ecsSystem in systems)
             {
@@ -27,21 +26,23 @@ namespace Rollin.LeoEcs.Extensions
 
                 if (systemType.IsDefined(typeof(UpdateAfterAttribute), false))
                 {
-                    var updateAfterType = ecsSystem.GetType().GetCustomAttribute<UpdateAfterAttribute>().Type;
-
-                    graph.AddEdge(ecsSystem, graph.FindVertex(system => system.GetType() == updateAfterType));
+                    graph.AddEdge(ecsSystem,
+                        graph.FindVertex(system =>
+                            system.GetType() == ecsSystem.GetType().GetCustomAttribute<UpdateAfterAttribute>().Type));
                 }
 
                 if (systemType.IsDefined(typeof(UpdateBeforeAttribute), false))
                 {
-                    var updateBeforeType = ecsSystem.GetType().GetCustomAttribute<UpdateBeforeAttribute>()?.Type;
-                    graph.AddEdge(graph.FindVertex(system => system.GetType() == updateBeforeType), ecsSystem);
+                    graph.AddEdge(
+                        graph.FindVertex(system =>
+                            system.GetType() == ecsSystem.GetType().GetCustomAttribute<UpdateBeforeAttribute>().Type),
+                        ecsSystem);
                 }
             }
 
             var hash = graph.DeepFirstSort();
 
-            return hash.ToList();
+            return hash.ToFastList();
         }
     }
 }

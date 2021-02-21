@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Rollin.LeoEcs.Extensions
 {
-    public struct Graph<T>
+    public readonly struct Graph<T>
     {
         public Dictionary<T, (int, T[])> AdjacencyList { get; }
 
@@ -12,6 +13,7 @@ namespace Rollin.LeoEcs.Extensions
             AdjacencyList = new Dictionary<T, (int, T[])>(vertexAmount);
         }
 
+        [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public void AddVertex(T vertex)
         {
             if (AdjacencyList.ContainsKey(vertex))
@@ -22,17 +24,18 @@ namespace Rollin.LeoEcs.Extensions
             AdjacencyList.Add(vertex, (0, new T[3]));
         }
 
+        [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public void AddEdge(T vertex, T edge)
         {
-            if (AdjacencyList.TryGetValue(vertex, out var vertexEdges))
-            {
-                if (vertexEdges.Item2.Length <= vertexEdges.Item1)
-                    Array.Resize(ref vertexEdges.Item2, vertexEdges.Item1 + 1);
+            if (!AdjacencyList.TryGetValue(vertex, out var vertexEdges))
+                return;
 
-                vertexEdges.Item2[vertexEdges.Item1++] = edge;
+            if (vertexEdges.Item2.Length <= vertexEdges.Item1)
+                Array.Resize(ref vertexEdges.Item2, vertexEdges.Item1 + 1);
 
-                AdjacencyList[vertex] = vertexEdges;
-            }
+            vertexEdges.Item2[vertexEdges.Item1++] = edge;
+
+            AdjacencyList[vertex] = vertexEdges;
         }
 
         public T FindVertex(Func<T, bool> compareFunc)
@@ -43,12 +46,13 @@ namespace Rollin.LeoEcs.Extensions
                     return keyValuePair.Key;
             }
 
-            return default;
+            throw new Exception("Can't find the vertex");
         }
     }
 
     public static class GraphExtensions
     {
+        [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public static HashSet<T> DeepFirstSort<T>(this in Graph<T> graph)
         {
             var result = new HashSet<T>();
@@ -61,6 +65,7 @@ namespace Rollin.LeoEcs.Extensions
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void Sort<T>(in Graph<T> graph, T vertex, ISet<T> visited)
         {
             if (visited.Contains(vertex))

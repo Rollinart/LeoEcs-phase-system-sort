@@ -1,28 +1,28 @@
 ﻿using System;
-using System.Collections.Generic;
 using Leopotam.Ecs;
 using Rollin.LeoEcs.Extensions;
+using Scellecs.Collections;
 
 namespace Rollin.LeoEcs
 {
-    public class SystemGroup : ISystemGroup
+    internal class SystemGroup
     {
         public Enum GroupType { get; }
 
-        private ICollection<IEcsInitSystem> initSystems;
+        private FastList<IEcsInitSystem> initSystems;
 
-        private ICollection<IEcsRunSystem> runSystems;
-        private ICollection<IEcsRunSystem> handlerRunSystems;
-        private ICollection<IEcsRunSystem> handlerSystems;
+        private FastList<IEcsRunSystem> runSystems;
+        private FastList<IEcsRunSystem> handlerRunSystems;
+        private FastList<IEcsRunSystem> handlerSystems;
 
         public SystemGroup(Enum groupType)
         {
             GroupType = groupType;
 
-            initSystems = new List<IEcsInitSystem>();
-            runSystems = new List<IEcsRunSystem>();
-            handlerRunSystems = new List<IEcsRunSystem>();
-            handlerSystems = new List<IEcsRunSystem>();
+            initSystems = new FastList<IEcsInitSystem>();
+            runSystems = new FastList<IEcsRunSystem>();
+            handlerRunSystems = new FastList<IEcsRunSystem>();
+            handlerSystems = new FastList<IEcsRunSystem>();
         }
 
         public void AddSystem<T>(T system)
@@ -32,10 +32,10 @@ namespace Rollin.LeoEcs
                 case IEcsInitSystem initSystem:
                     initSystems.Add(initSystem);
                     return;
-                case IEcsRunSystem runSystem when system.GetType().IsDefined(typeof(HandlerSystemAttribute), true):
+                case IEcsRunSystem runSystem when system.GetType().IsDefined(typeof(HandlerSystemAttribute), false):
                     handlerSystems.Add(runSystem);
                     return;
-                case IEcsRunSystem runSystem when system.GetType().IsDefined(typeof(HandlerRunSystemAttribute), true):
+                case IEcsRunSystem runSystem when system.GetType().IsDefined(typeof(HandlerRunSystemAttribute), false):
                     handlerRunSystems.Add(runSystem);
                     return;
                 case IEcsRunSystem runSystem:

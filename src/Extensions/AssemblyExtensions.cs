@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
+using Scellecs.Collections;
 
 namespace Rollin.LeoEcs.Extensions
 {
@@ -9,23 +9,26 @@ namespace Rollin.LeoEcs.Extensions
         [Flags]
         public enum AssemblyTypesFilter
         {
-            None,
-            IncludeInterfaces,
-            IncludeAbstractClasses,
-            IncludeGeneric,
+            None = 1 << 0,
+            IncludeInterfaces = 1 << 1,
+            IncludeAbstractClasses = 1 << 2,
+            IncludeGeneric = 1 << 3,
             All = IncludeInterfaces | IncludeAbstractClasses | IncludeGeneric,
         }
 
-        public static List<Type> GetTypesWithFilter(this AppDomain appDomain, Type type,
+        public static FastList<Type> GetTypesWithFilter(this AppDomain appDomain, Type type,
             AssemblyTypesFilter filter = AssemblyTypesFilter.All)
         {
-            var result = new List<Type>();
+            var result = new FastList<Type>(10);
+            var assemblies = appDomain.GetAssemblies();
 
-            foreach (var assembly in appDomain.GetAssemblies())
+            for (var index = 0; index < assemblies.Length; index++)
             {
+                var assembly = appDomain.GetAssemblies()[index];
                 var types = assembly.GetTypes();
-                foreach (var assemblyType in types)
+                for (var i = 0; i < types.Length; i++)
                 {
+                    var assemblyType = types[i];
                     if (assemblyType.IsAssignableFromWithFilter(type, filter))
                         result.Add(assemblyType);
                 }
@@ -34,13 +37,14 @@ namespace Rollin.LeoEcs.Extensions
             return result;
         }
 
-        public static List<Type> GetTypesWithFilter(this Assembly assembly, Type type,
+        public static FastList<Type> GetTypesWithFilter(this Assembly assembly, Type type,
             AssemblyTypesFilter filter = AssemblyTypesFilter.All)
         {
-            var result = new List<Type>();
+            var result = new FastList<Type>(10);
             var types = assembly.GetTypes();
-            foreach (var assemblyType in types)
+            for (var index = 0; index < types.Length; index++)
             {
+                var assemblyType = types[index];
                 if (assemblyType.IsAssignableFromWithFilter(type, filter))
                     result.Add(assemblyType);
             }
@@ -51,10 +55,15 @@ namespace Rollin.LeoEcs.Extensions
         private static bool IsAssignableFromWithFilter(this Type type, Type assignedFrom, AssemblyTypesFilter filter)
         {
             return assignedFrom.IsAssignableFrom(type) &&
-                   (type.IsInterface && filter.HasFlag(AssemblyTypesFilter.IncludeInterfaces) ||
-                    type.IsAbstract && filter.HasFlag(AssemblyTypesFilter.IncludeAbstractClasses) &&
+                   (type.IsInterface && filter.IsSet(AssemblyTypesFilter.IncludeInterfaces) ||
+                    type.IsAbstract && filter.IsSet(AssemblyTypesFilter.IncludeAbstractClasses) &&
                     !type.IsInterface || !type.IsInterface && !type.IsAbstract && !type.IsGenericType ||
-                    type.IsGenericType && filter.HasFlag(AssemblyTypesFilter.IncludeGeneric));
+                    type.IsGenericType && filter.IsSet(AssemblyTypesFilter.IncludeGeneric));
+        }
+
+        private static bool IsSet(this AssemblyTypesFilter filter, AssemblyTypesFilter mask)
+        {
+            return (filter & mask) == mask;
         }
     }
 }

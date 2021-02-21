@@ -1,0 +1,18 @@
+{
+  "name": "com.rollinart.leoecs-phase-system-sort",
+  "author": "Yuri Doronin",
+  "displayName": "Phasing and Sorting",
+  "description": "Phasing and sorting LeoEcs systems",
+  "unity": "2019.4",
+  "version": "2021.02.21",
+  "keywords": [
+    "leoecs",
+    "ecs",
+    "sorting"
+  ],
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Rollinart/LeoEcs-phase-system-sort.git"
+  }
+}

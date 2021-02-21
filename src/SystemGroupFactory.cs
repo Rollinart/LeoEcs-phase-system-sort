@@ -6,44 +6,36 @@ using Rollin.LeoEcs.Extensions;
 
 namespace Rollin.LeoEcs
 {
-    public static class SystemGroupFactory
+    internal static class SystemGroupFactory
     {
-        public static IEnumerable<ISystemGroup> GetSystemGroups(params Type[] includedGroups)
+        public static Dictionary<Enum, SystemGroup> GetSystemGroups(params Type[] includedGroups)
         {
-            var groupsDictionary = new Dictionary<Enum, ISystemGroup>();
+            var groupsDictionary = new Dictionary<Enum, SystemGroup>();
 
             CreateSystemGroups(groupsDictionary, includedGroups);
-
             CreateAndSortSystems(groupsDictionary);
 
-            var groups = new ISystemGroup[groupsDictionary.Count];
-
-            var itr = 0;
-            foreach (var keyValuePair in groupsDictionary)
-            {
-                groups[itr] = keyValuePair.Value;
-                itr++;
-            }
-
-            return groups;
+            return groupsDictionary;
         }
 
-        private static void CreateSystemGroups(IDictionary<Enum, ISystemGroup> groupsDictionary,
+        private static void CreateSystemGroups(IDictionary<Enum, SystemGroup> groupsDictionary,
             params Type[] includedTypes)
         {
-            foreach (var includedType in includedTypes)
+            for (var index = 0; index < includedTypes.Length; index++)
             {
+                var includedType = includedTypes[index];
                 var systemGroupsTypes = includedType.GetEnumNames();
 
-                foreach (var type in systemGroupsTypes)
+                for (var i = 0; i < systemGroupsTypes.Length; i++)
                 {
-                    var enumValue = Enum.Parse(includedType, type) as Enum;
-                    groupsDictionary.Add(enumValue, new SystemGroup(enumValue));
+                    var type = systemGroupsTypes[i];
+                    var groupType = Enum.Parse(includedType, type) as Enum;
+                    groupsDictionary.Add(groupType, new SystemGroup(groupType));
                 }
             }
         }
 
-        private static void CreateAndSortSystems(IReadOnlyDictionary<Enum, ISystemGroup> groupsDictionary)
+        private static void CreateAndSortSystems(IReadOnlyDictionary<Enum, SystemGroup> groupsDictionary)
         {
             CreateSystems<IEcsInitSystem>(groupsDictionary);
             CreateSystems<IEcsRunSystem>(groupsDictionary);
@@ -54,28 +46,42 @@ namespace Rollin.LeoEcs
             }
         }
 
-        private static void CreateSystems<T>(IReadOnlyDictionary<Enum, ISystemGroup> groupsDictionary)
+        private static void CreateSystems<T>(IReadOnlyDictionary<Enum, SystemGroup> groupsDictionary)
         {
-            var executingAssembly = Assembly.GetExecutingAssembly();
-            var systemTypes = executingAssembly.GetTypesWithFilter(typeof(T),
-                AssemblyExtensions.AssemblyTypesFilter.IncludeAbstractClasses);
+            var usedAssemblies = new HashSet<string>();
 
-            foreach (var type in systemTypes)
+            foreach (var key in groupsDictionary.Keys)
             {
-                if (type.IsInterface || type.IsAbstract)
+                var groupType = key.GetType();
+                var groupAssembly = groupType.Assembly;
+
+                if (usedAssemblies.Contains(groupAssembly.FullName))
                 {
                     continue;
                 }
 
-                var groupDependency = type.GetCustomAttribute<SystemGroupAttribute>(false);
+                usedAssemblies.Add(groupAssembly.FullName);
 
-                if (groupDependency == null)
-                    continue;
+                var systemTypes = groupAssembly.GetTypesWithFilter(typeof(T),
+                    AssemblyExtensions.AssemblyTypesFilter.IncludeAbstractClasses);
+                
+                foreach (Type type in systemTypes)
+                {
+                    if (type.IsInterface || type.IsAbstract)
+                    {
+                        continue;
+                    }
 
-                var system = (T) Activator.CreateInstance(type);
+                    var groupDependency = type.GetCustomAttribute<SystemGroupAttribute>(false);
 
-                if (groupsDictionary.TryGetValue(groupDependency.GroupType, out var systemGroup))
-                    systemGroup.AddSystem(system);
+                    if (groupDependency == null)
+                        continue;
+
+                    var system = (T) Activator.CreateInstance(type);
+
+                    if (groupsDictionary.TryGetValue(groupDependency.GroupType, out var systemGroup))
+                        systemGroup.AddSystem(system);
+                }
             }
         }
     }
